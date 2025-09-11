@@ -1,19 +1,20 @@
 <template>
   <div id="app">
-    <font-view></font-view>
+    <front-view></front-view>
   </div>
 </template>
 <script>
 import FrontView from './views/front/FrontViews.vue'
 export default {
-  components: {FrontView},
-  data(){
+  components: { FrontView },
+  data() {
     return {
       message: 'Hello Vue!'
     }
   },
   methods: {
   }
+}
 </script>
 <style>
 #app {
