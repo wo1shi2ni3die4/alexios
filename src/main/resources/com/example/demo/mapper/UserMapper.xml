@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.demo.mapper.UserMapper">
+    <select id="list" resultType="com.example.demo.pojo.User">
+        select *from user
+        <where>
+            <if test="name!=null  and name!=''">name like  concat('%',#{name},'%') </if>
+            <if test="email!=null">and email=#{email}</if>
+            <if test="address!=null">and address=#{address}</if>
+        </where>
+        order by update_time desc
+    </select>
+    <delete id="delete">
+        delete  from user where id in
+        <foreach collection="ids" item="id" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+    </delete>
+    <update id="put">
+        update user
+        <set>
+            <if test="username!=null">username=#{username},</if>
+            <if test="name!=null">name=#{name},</if>
+            <if test="nickname!=null">nickname=#{nickname},</if>
+            <if test="image!=null">image=#{image},</if>
+            <if test="email!=null">email= #{email},</if>
+            <if test="address!=null">address=#{address},</if>
+            <if test="phone!=null">phone=#{phone},</if>
+            <if test="updateTime!=null">update_time=#{updateTime}</if>
+        </set>
+        where id = #{id}
+    </update>
+</mapper>
