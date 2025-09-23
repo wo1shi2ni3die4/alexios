@@ -140,17 +140,25 @@
             <el-button type="primary">导入<i class="el-icon-upload"></i></el-button>
           </div>
           <el-table :data="tableData" border stripe :header-cell-class-name="headerclass">
-            <el-table-column prop="date" label="日期" width="140">
+            <el-table-column prop="name" label="姓名" width="140" align="center">
             </el-table-column>
-            <el-table-column prop="name" label="姓名" width="120">
+            <el-table-column prop="username" label="用户名" width="120" align="center">
             </el-table-column>
-            <el-table-column prop="address" label="地址"> </el-table-column>
-            <el-table-column label="操作">
-              <template>
+            <el-table-column prop="image" label="头像" width="120" align="center">
+              <template slot-scope="scope">
+                <img :src="scope.row.image" alt="头像" style="width: 40px; height: 40px; border-radius: 50%;">
+              </template>
+            </el-table-column>
+            <el-table-column prop="address" label="地址" align="center"> </el-table-column>
+            <el-table-column prop="email" label="邮箱" align="center"> </el-table-column>
+            <el-table-column prop="phone" label="电话" align="center"> </el-table-column>
+            <el-table-column label="操作" width="180" align="center">
+              <template >
                 <el-button type="success" >编辑<i class="el-icon-edit"></i></el-button>
                 <el-button type="danger" >删除<i class="el-icon-delete"></i></el-button>
               </template>
              </el-table-column>
+             <el-table-column prop="updateTime" label="更新时间" align="center"> </el-table-column>
           </el-table>
           <div style="padding: 10px 0">
             <el-pagination
@@ -183,22 +191,41 @@
 </style>
 
 <script>
+import request from '@/utils/request'
+
 export default {
   data() {
-    const item = {
-      date: "2016-05-02",
-      name: "王小虎",
-      address: "上海市普陀区金沙江路 1518 弄",
-    };
     return {
-      tableData: Array(10).fill(item),
+      tableData: [],
       collapseBtnClass: "el-icon-s-fold",
       isCollapse: false,
       sideWidth: 200,
       logoTextshow: true,
       headerclass: "headerclass",
+      
+      // 分页参数
+      pagination: {
+        currentPage: 1,
+        pageSize: 10,
+        total: 0
+      },
+      
+      // 搜索参数
+      searchParams: {
+        name: '',
+        email: '',
+        address: ''
+      },
+      
+      // 选中的行
+      selectedRows: []
     };
   },
+  
+  created() {
+    this.loadData()
+  },
+  
   methods: {
     collapse() {
       this.isCollapse = !this.isCollapse;
@@ -212,6 +239,120 @@ export default {
         this.logoTextshow = true;
       }
     },
-  },
+    
+    // 加载数据
+    async loadData() {
+      try {
+        const params = {
+          page: this.pagination.currentPage,
+          pageSize: this.pagination.pageSize,
+          ...this.searchParams
+        }
+        
+        const response = await request.get('/user/', { params })
+        
+        if (response && response.data) {
+          this.tableData = response.data.rows || []
+          this.pagination.total = response.data.total || 0
+        }
+      } catch (error) {
+        this.$message.error('获取数据失败：' + error.message)
+      }
+    },
+    
+    // 分页大小改变
+    handleSizeChange(pageSize) {
+      this.pagination.pageSize = pageSize
+      this.pagination.currentPage = 1
+      this.loadData()
+    },
+    
+    // 当前页改变
+    handleCurrentChange(currentPage) {
+      this.pagination.currentPage = currentPage
+      this.loadData()
+    },
+    
+    // 重置搜索
+    resetSearch() {
+      this.searchParams = {
+        name: '',
+        email: '',
+        address: ''
+      }
+      this.pagination.currentPage = 1
+      this.loadData()
+    },
+    
+    // 表格选择改变
+    handleSelectionChange(selection) {
+      this.selectedRows = selection
+    },
+    
+    // 新增用户
+    handleAdd() {
+      this.$message.info('新增功能待实现')
+      // 这里可以打开新增对话框
+    },
+    
+    // 编辑用户
+    handleEdit(row) {
+      this.$message.info(`编辑用户：${row.name}`)
+      // 这里可以打开编辑对话框，并加载用户详情
+      // this.getUserDetail(row.id)
+    },
+    
+    // 删除用户
+    async handleDelete(id) {
+      try {
+        await this.$confirm('确定要删除该用户吗？', '提示', {
+          type: 'warning'
+        })
+        
+        await request.delete(`/user/${id}`)
+        this.$message.success('删除成功')
+        this.loadData() // 重新加载数据
+      } catch (error) {
+        if (error !== 'cancel') {
+          this.$message.error('删除失败：' + error.message)
+        }
+      }
+    },
+    
+    // 批量删除
+    async handleBatchDelete() {
+      if (this.selectedRows.length === 0) {
+        this.$message.warning('请选择要删除的用户')
+        return
+      }
+      
+      try {
+        await this.$confirm(`确定要删除选中的 ${this.selectedRows.length} 个用户吗？`, '提示', {
+          type: 'warning'
+        })
+        
+        const ids = this.selectedRows.map(row => row.id)
+        await request.delete(`/user/${ids.join(',')}`)
+        this.$message.success('批量删除成功')
+        this.selectedRows = []
+        this.loadData()
+      } catch (error) {
+        if (error !== 'cancel') {
+          this.$message.error('批量删除失败：' + error.message)
+        }
+      }
+    },
+    
+    // 获取用户详情（用于编辑）
+    async getUserDetail(id) {
+      try {
+        const response = await request.get(`/user/${id}`)
+        // 处理用户详情数据，可以用于填充编辑表单
+        console.log('用户详情：', response.data)
+      } catch (error) {
+        this.$message.error('获取用户详情失败：' + error.message)
+      }
+    }
+  }
 };
 </script>

@@ -6,6 +6,7 @@ import 'element-ui/lib/theme-chalk/index.css';
 import './assets/gloable.css'
 Vue.config.productionTip = false
 Vue.use(ElementUI,{size:"mini"});
+Vue.prototype.request = require;
 new Vue({
   router,
   render: h => h(App)
