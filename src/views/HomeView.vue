@@ -134,7 +134,8 @@
             <el-button class="ml-5" type="primary">搜索</el-button>
           </div>
           <div style="margin: 10px 0; font-size: 14px">
-            <el-button type="primary" @click="handleAdd">新增<i class="el-icon-circle-plus-outline"></i></el-button>
+            <el-button type="primary" @click="dialogFormVisible = true">
+              新增<i class="el-icon-circle-plus-outline"></i></el-button>
             <el-button type="danger">批量删除<i class="el-icon-delete"></i></el-button>
           </div>
           <el-table :data="tableData" border stripe :header-cell-class-name="headerclass">
@@ -173,65 +174,57 @@
         </el-main>
       </el-container>
     </el-container>
-    <!-- 新增用户对话框 -->
-    <el-dialog
-        title="新增用户"
-        :visible.sync="dialogFormVisible"
-        width="600px"
-        @close="resetForm"
-    >
-      <el-form :model="form" :rules="rules" ref="form" label-width="80px">
-        <el-row>
-          <el-col :span="12">
-            <el-form-item label="姓名" prop="name">
-              <el-input v-model="form.name" placeholder="请输入姓名"></el-input>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="用户名" prop="username">
-              <el-input v-model="form.username" placeholder="请输入用户名"></el-input>
-            </el-form-item>
-          </el-col>
-        </el-row>
+    <el-dialog title="新增用户" :visible.sync="dialogFormVisible" width="600px">
+      <el-form :model="form" :rules="rules" ref="form" label-width="100px">
+        <el-form-item label="姓名" prop="name">
+          <el-input v-model="form.name" autocomplete="off" placeholder="请输入姓名"></el-input>
+        </el-form-item>
 
-        <el-row>
-          <el-col :span="12">
-            <el-form-item label="昵称" prop="nickname">
-              <el-input v-model="form.nickname" placeholder="请输入昵称"></el-input>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="电话" prop="phone">
-              <el-input v-model="form.phone" placeholder="请输入电话"></el-input>
-            </el-form-item>
-          </el-col>
-        </el-row>
+        <el-form-item label="用户名" prop="username">
+          <el-input v-model="form.username" autocomplete="off" placeholder="请输入用户名"></el-input>
+        </el-form-item>
+
+        <el-form-item label="昵称" prop="nickname">
+          <el-input v-model="form.nickname" autocomplete="off" placeholder="请输入昵称"></el-input>
+        </el-form-item>
+
+        <el-form-item label="头像" prop="image">
+          <div style="display: flex; align-items: center;">
+            <el-upload
+                class="avatar-uploader"
+                :show-file-list="false"
+                :before-upload="beforeAvatarUpload"
+                :http-request="customUpload">
+              <img v-if="form.image" :src="form.image" class="avatar">
+              <i v-else class="el-icon-plus avatar-uploader-icon" style="display: flex; justify-content: center; align-items: center;"></i>
+            </el-upload>
+            <div style="margin-left: 15px;">
+              <div v-if="form.image" class="preview-info">
+              </div>
+              <div v-else class="upload-tips">
+                <p>点击上传头像</p>
+                <p class="tip-text">支持 JPG/PNG 格式，大小不超过2MB</p>
+              </div>
+            </div>
+          </div>
+        </el-form-item>
 
         <el-form-item label="邮箱" prop="email">
-          <el-input v-model="form.email" placeholder="请输入邮箱"></el-input>
+          <el-input v-model="form.email" autocomplete="off" placeholder="请输入邮箱"></el-input>
+        </el-form-item>
+
+        <el-form-item label="电话" prop="phone">
+          <el-input v-model="form.phone" autocomplete="off" placeholder="请输入电话"></el-input>
         </el-form-item>
 
         <el-form-item label="地址" prop="address">
-          <el-input v-model="form.address" placeholder="请输入地址"></el-input>
-        </el-form-item>
-
-        <el-form-item label="头像">
-          <el-upload
-              class="avatar-uploader"
-              action="/upload"
-              :show-file-list="false"
-              :on-success="handleAvatarSuccess"
-              :before-upload="beforeAvatarUpload"
-          >
-            <img v-if="form.image" :src="form.image" class="avatar">
-            <i v-else class="el-icon-plus avatar-uploader-icon"  style="display: flex; justify-content: center; align-items: center;"></i>
-          </el-upload>
+          <el-input v-model="form.address" autocomplete="off" placeholder="请输入地址"></el-input>
         </el-form-item>
       </el-form>
 
       <div slot="footer" class="dialog-footer">
-        <el-button @click="dialogFormVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitForm">确定</el-button>
+        <el-button @click="dialogFormVisible = false">取 消</el-button>
+        <el-button type="primary" @click="submitForm">确 定</el-button>
       </div>
     </el-dialog>
   </div>
@@ -261,10 +254,9 @@ export default {
       sideWidth: 200,
       logoTextshow: true,
       headerclass: "headerclass",
-      // 对话框显示控制
       dialogFormVisible: false,
-
-      // 表单数据
+      tempPreviewUrl: '', // 临时预览URL
+      localPreviewUrl: '', // 本地预览URL
       form: {
         name: '',
         username: '',
@@ -274,8 +266,6 @@ export default {
         phone: '',
         address: ''
       },
-
-      // 表单验证规则
       rules: {
         name: [
           { required: true, message: '请输入姓名', trigger: 'blur' }
@@ -285,7 +275,7 @@ export default {
         ],
         email: [
           { required: true, message: '请输入邮箱地址', trigger: 'blur' },
-          { type: 'email', message: '请输入正确的邮箱地址', trigger: 'blur' }
+          { type: 'email', message: '请输入正确的邮箱地址', trigger: ['blur', 'change'] }
         ]
       },
       // 分页参数
@@ -310,7 +300,7 @@ export default {
   created() {
     this.loadData()
   },
-
+  
   methods: {
     collapse() {
       this.isCollapse = !this.isCollapse;
@@ -324,7 +314,83 @@ export default {
         this.logoTextshow = true;
       }
     },
-    
+    // 自定义上传方法
+    async customUpload(options) {
+      const formData = new FormData();
+      formData.append('image', options.file); // 关键：参数名必须是image
+
+      try {
+        const response = await request.post('/upload', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+
+        // 上传成功处理
+        if (response && response.code === 1) {
+          this.form.image = response.data;
+          this.$message.success('头像上传成功');
+          options.onSuccess(response); // 通知上传组件上传成功
+        } else {
+          this.$message.error('头像上传失败: ' + (response.msg || '未知错误'));
+          options.onError(new Error('上传失败'));
+        }
+      } catch (error) {
+        this.$message.error('头像上传失败: ' + error.message);
+        options.onError(error);
+      }
+    },
+
+    beforeAvatarUpload(file) {
+      // 允许JPG和PNG格式
+      const isJPG = file.type === 'image/jpeg' || file.type === 'image/png';
+      const isLt2M = file.size / 1024 / 1024 < 10;
+
+      if (!isJPG) {
+        this.$message.error('上传头像图片只能是 JPG 或 PNG 格式!');
+        return false;
+      }
+      if (!isLt2M) {
+        this.$message.error('上传头像图片大小不能超过 10MB!');
+        return false;
+      }
+      return true;
+    },
+
+    submitForm() {
+      this.$refs.form.validate(async (valid) => {
+        if (valid) {
+          try {
+            await request.post('/user', this.form);
+            this.$message.success('新增用户成功');
+            this.dialogFormVisible = false;
+            this.resetForm();
+            // 触发父组件刷新数据
+            this.$emit('user-added');
+          } catch (error) {
+            this.$message.error('新增用户失败：' + error.message);
+          }
+        } else {
+          this.$message.error('请完善表单信息');
+          return false;
+        }
+      });
+    },
+
+    resetForm() {
+      this.form = {
+        name: '',
+        username: '',
+        nickname: '',
+        image: '',
+        email: '',
+        phone: '',
+        address: ''
+      };
+      if (this.$refs.form) {
+        this.$refs.form.clearValidate();
+      }
+    },
     // 加载数据
     async loadData() {
       try {
@@ -373,14 +439,20 @@ export default {
     handleSelectionChange(selection) {
       this.selectedRows = selection
     },
-
+    
+    // 新增用户
+    handleAdd() {
+      this.$message.info('新增功能待实现')
+      // 这里可以打开新增对话框
+    },
+    
     // 编辑用户
     handleEdit(row) {
       this.$message.info(`编辑用户：${row.name}`)
       // 这里可以打开编辑对话框，并加载用户详情
       // this.getUserDetail(row.id)
     },
-
+    
     // 删除用户
     async handleDelete(id) {
       try {
@@ -431,70 +503,6 @@ export default {
       } catch (error) {
         this.$message.error('获取用户详情失败：' + error.message)
       }
-    },
-    // 打开新增对话框
-    handleAdd() {
-      this.dialogFormVisible = true;
-      this.resetForm();
-    },
-
-    // 重置表单
-    resetForm() {
-      this.form = {
-        name: '',
-        username: '',
-        nickname: '',
-        image: '',
-        email: '',
-        phone: '',
-        address: ''
-      };
-      if (this.$refs.form) {
-        this.$refs.form.clearValidate();
-      }
-    },
-
-    // 提交表单
-    async submitForm() {
-      try {
-        // 表单验证
-        await this.$refs.form.validate();
-
-        // 调用新增接口
-        await request.post('/user', this.form);
-
-        this.$message.success('新增用户成功');
-        this.dialogFormVisible = false;
-        this.loadData(); // 刷新表格数据
-      } catch (error) {
-        if (error !== 'cancel') {
-          this.$message.error('新增失败：' + error.message);
-        }
-      }
-    },
-
-    // 头像上传成功
-    handleAvatarSuccess(response) {
-      if (response && response.code === 1) {
-        this.form.image = response.data;
-        this.$message.success('头像上传成功');
-      } else {
-        this.$message.error('头像上传失败');
-      }
-    },
-
-    // 头像上传前校验
-    beforeAvatarUpload(file) {
-      const isJPG = file.type === 'image/jpeg' || file.type === 'image/png';
-      const isLt2M = file.size / 1024 / 1024 < 2;
-
-      if (!isJPG) {
-        this.$message.error('头像只能是 JPG 或 PNG 格式!');
-      }
-      if (!isLt2M) {
-        this.$message.error('头像大小不能超过 2MB!');
-      }
-      return isJPG && isLt2M;
     }
   }
 };
@@ -523,5 +531,4 @@ export default {
   height: 178px;
   display: block;
 }
-
 </style>
