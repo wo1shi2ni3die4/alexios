@@ -7,8 +7,8 @@
         select *from user
         <where>
             <if test="name!=null  and name!=''">name like  concat('%',#{name},'%') </if>
-            <if test="email!=null">and email=#{email}</if>
-            <if test="address!=null">and address=#{address}</if>
+            <if test="email!=null  and name!=''">and email=#{email}</if>
+            <if test="address!=null  and name!=''">and address=#{address}</if>
         </where>
         order by update_time desc
     </select>
