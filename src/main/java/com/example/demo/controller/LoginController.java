@@ -1,4 +1,4 @@
-/*package com.example.demo.controller;
+package com.example.demo.controller;
 
 import com.example.demo.pojo.Result;
 import com.example.demo.pojo.User;
@@ -35,4 +35,4 @@ public class LoginController {
     }
 
 
-}…*/
+}
