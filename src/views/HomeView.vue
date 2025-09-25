@@ -152,9 +152,16 @@
             <el-table-column prop="email" label="邮箱" align="center"> </el-table-column>
             <el-table-column prop="phone" label="电话" align="center"> </el-table-column>
             <el-table-column label="操作" width="180" align="center">
-              <template >
+              <template slot-scope="scope">
                 <el-button type="success" >编辑<i class="el-icon-edit"></i></el-button>
-                <el-button type="danger" >删除<i class="el-icon-delete"></i></el-button>
+                <el-button
+                    type="danger"
+                    size="mini"
+                    @click="handleDelete(scope.row.id)"
+                >
+                  删除
+                  <i class="el-icon-delete"></i>
+                </el-button>
               </template>
              </el-table-column>
              <el-table-column prop="updateTime" label="更新时间" align="center"> </el-table-column>
@@ -440,12 +447,6 @@ export default {
       this.selectedRows = selection
     },
     
-    // 新增用户
-    handleAdd() {
-      this.$message.info('新增功能待实现')
-      // 这里可以打开新增对话框
-    },
-    
     // 编辑用户
     handleEdit(row) {
       this.$message.info(`编辑用户：${row.name}`)
@@ -455,17 +456,31 @@ export default {
     
     // 删除用户
     async handleDelete(id) {
+      console.log('准备删除用户ID:', id)
+
       try {
-        await this.$confirm('确定要删除该用户吗？', '提示', {
+        // 确认对话框
+        await this.$confirm('确定要删除这个用户吗？', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
           type: 'warning'
         })
-        
-        await request.delete(`/user/${id}`)
+
+        console.log('用户确认删除，开始调用API')
+
+        // 调用删除API - 注意这里直接传id，不是数组
+        const response = await request.delete(`/user/${id}`)
+        console.log('删除API调用成功:', response)
+
         this.$message.success('删除成功')
-        this.loadData() // 重新加载数据
+
+        // 重新加载数据
+        await this.loadData()
+
       } catch (error) {
+        console.log('删除过程错误:', error)
         if (error !== 'cancel') {
-          this.$message.error('删除失败：' + error.message)
+          this.$message.error('删除失败: ' + (error.message || '未知错误'))
         }
       }
     },
