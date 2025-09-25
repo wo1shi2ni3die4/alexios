@@ -115,30 +115,52 @@
         <el-main>
           <div style="padding: 10px 0">
             <el-input
+                v-model="searchParams.name"
               style="width: 200px"
               suffix-icon="el-icon-search"
               placeholder="请输入名称"
+                @keyup.enter="handleSearch"
             ></el-input>
             <el-input
               style="width: 200px"
               suffix-icon="el-icon-message"
               class="ml-5"
               placeholder="请输入邮箱"
+              v-model="searchParams.email"
+              @keyup.enter="handleSearch"
             ></el-input>  
             <el-input 
               style="width: 200px"
+              v-model="searchParams.address"
               suffix-icon="el-icon-position"
               placeholder="请输入地址"
+              @keyup.enter="handleSearch"
               class="ml-5"
             ></el-input>
-            <el-button class="ml-5" type="primary">搜索</el-button>
+            <el-button class="ml-5" type="primary" @click="handleSearch">搜索</el-button>
+            <el-button class="ml-5" @click="resetSearch">重置</el-button>
           </div>
           <div style="margin: 10px 0; font-size: 14px">
-            <el-button type="primary" @click="dialogFormVisible = true">
-              新增<i class="el-icon-circle-plus-outline"></i></el-button>
-            <el-button type="danger">批量删除<i class="el-icon-delete"></i></el-button>
+            <el-button type="primary" @click="handleAdd">
+              新增<i class="el-icon-circle-plus-outline"></i>
+            </el-button>
+            <el-button
+                type="danger"
+                @click="handleBatchDelete"
+            >
+              批量删除<i class="el-icon-delete"></i>
+            </el-button>
           </div>
-          <el-table :data="tableData" border stripe :header-cell-class-name="headerclass">
+          <!-- 用户表格 -->
+          <el-table
+              :data="tableData"
+              border
+              stripe
+              :header-cell-class-name="headerclass"
+              @selection-change="handleSelectionChange"
+          >
+            <!-- 选择列 -->
+            <el-table-column type="selection" width="55" align="center"></el-table-column>
             <el-table-column prop="name" label="姓名" width="140" align="center">
             </el-table-column>
             <el-table-column prop="username" label="用户名" width="120" align="center">
@@ -153,7 +175,13 @@
             <el-table-column prop="phone" label="电话" align="center"> </el-table-column>
             <el-table-column label="操作" width="180" align="center">
               <template slot-scope="scope">
-                <el-button type="success" >编辑<i class="el-icon-edit"></i></el-button>
+                <el-button
+                    type="success"
+                    size="mini"
+                    @click="handleEdit(scope.row)"
+                >
+                  编辑<i class="el-icon-edit"></i>
+                </el-button>
                 <el-button
                     type="danger"
                     size="mini"
@@ -171,17 +199,22 @@
               @size-change="handleSizeChange"
               @current-change="handleCurrentChange"
               :current-page="currentPage4"
-              :page-sizes="[100, 200, 300, 400]"
-              :page-size="100"
+              :page-sizes="[10,20,40,50]"
+              :page-size="20"
               layout="total, sizes, prev, pager, next, jumper"
-              :total="400"
+              :total="pagination.total"
             >
             </el-pagination>
           </div>
         </el-main>
       </el-container>
     </el-container>
-    <el-dialog title="新增用户" :visible.sync="dialogFormVisible" width="600px">
+    <el-dialog
+        :title="dialogType === 'add' ? '新增用户' : '编辑用户'"
+        :visible.sync="dialogFormVisible"
+        width="600px"
+        @close="resetForm"
+    >
       <el-form :model="form" :rules="rules" ref="form" label-width="100px">
         <el-form-item label="姓名" prop="name">
           <el-input v-model="form.name" autocomplete="off" placeholder="请输入姓名"></el-input>
@@ -230,9 +263,11 @@
       </el-form>
 
       <div slot="footer" class="dialog-footer">
-        <el-button @click="dialogFormVisible = false">取 消</el-button>
-        <el-button type="primary" @click="submitForm">确 定</el-button>
-      </div>
+          <el-button @click="dialogFormVisible = false">取 消</el-button>
+          <el-button type="primary" @click="submitForm">
+            {{ dialogType === 'add' ? '新 增' : '保 存' }}
+          </el-button>
+        </div>
     </el-dialog>
   </div>
 </template>
@@ -256,15 +291,19 @@ export default {
   data() {
     return {
       tableData: [],
+      // 选中的行
+      selectedRows: [],
       collapseBtnClass: "el-icon-s-fold",
       isCollapse: false,
       sideWidth: 200,
       logoTextshow: true,
       headerclass: "headerclass",
       dialogFormVisible: false,
+      dialogType: 'add', // 添加对话框类型：add-新增，edit-编辑
       tempPreviewUrl: '', // 临时预览URL
       localPreviewUrl: '', // 本地预览URL
       form: {
+        id: null,
         name: '',
         username: '',
         nickname: '',
@@ -297,10 +336,9 @@ export default {
         name: '',
         email: '',
         address: ''
-      },
+      }
       
-      // 选中的行
-      selectedRows: []
+
     };
   },
   
@@ -320,6 +358,12 @@ export default {
         this.sideWidth = 200;
         this.logoTextshow = true;
       }
+    },
+    // 新增用户
+    handleAdd() {
+      this.dialogType = 'add'
+      this.dialogFormVisible = true
+      // 表单会在对话框打开后自动重置
     },
     // 自定义上传方法
     async customUpload(options) {
@@ -368,24 +412,36 @@ export default {
       this.$refs.form.validate(async (valid) => {
         if (valid) {
           try {
-            await request.post('/user', this.form);
-            this.$message.success('新增用户成功');
-            this.dialogFormVisible = false;
-            this.resetForm();
-            // 触发父组件刷新数据
-            this.$emit('user-added');
+            // 验证表单
+            await this.$refs.form.validate()
+
+            if (this.dialogType === 'add') {
+              // 新增用户
+              await request.post('/user', this.form)
+              this.$message.success('用户新增成功')
+            } else {
+              // 编辑用户
+              await request.put('/user', this.form)
+              this.$message.success('用户信息更新成功')
+            }
+
+            this.dialogFormVisible = false
+            // 重新加载数据
+            await this.loadData()
+
           } catch (error) {
-            this.$message.error('新增用户失败：' + error.message);
+            console.log('表单提交错误:', error)
+            if (error !== 'cancel') {
+              this.$message.error('操作失败: ' + (error.message || '未知错误'))
+            }
           }
-        } else {
-          this.$message.error('请完善表单信息');
-          return false;
         }
       });
     },
 
     resetForm() {
       this.form = {
+        id: null,
         name: '',
         username: '',
         nickname: '',
@@ -394,6 +450,7 @@ export default {
         phone: '',
         address: ''
       };
+      this.dialogType = 'add' // 重置为新增模式
       if (this.$refs.form) {
         this.$refs.form.clearValidate();
       }
@@ -430,7 +487,10 @@ export default {
       this.pagination.currentPage = currentPage
       this.loadData()
     },
-    
+    handleSearch() {
+      this.pagination.currentPage = 1
+      this.loadData()
+    },
     // 重置搜索
     resetSearch() {
       this.searchParams = {
@@ -449,9 +509,23 @@ export default {
     
     // 编辑用户
     handleEdit(row) {
-      this.$message.info(`编辑用户：${row.name}`)
-      // 这里可以打开编辑对话框，并加载用户详情
-      // this.getUserDetail(row.id)
+      console.log('编辑用户:', row)
+      this.dialogType = 'edit'
+      this.dialogFormVisible = true
+
+      // 将行数据填充到表单中
+      this.$nextTick(() => {
+        this.form = {
+          id: row.id,
+          name: row.name || '',
+          username: row.username || '',
+          nickname: row.nickname || '',
+          image: row.image || '', // 注意：表格中头像字段是image
+          email: row.email || '',
+          phone: row.phone || '',
+          address: row.address || ''
+        }
+      })
     },
     
     // 删除用户
@@ -484,27 +558,48 @@ export default {
         }
       }
     },
-    
+
+
     // 批量删除
     async handleBatchDelete() {
-      if (this.selectedRows.length === 0) {
-        this.$message.warning('请选择要删除的用户')
+      // 检查选中的行
+      if (!this.selectedRows || this.selectedRows.length === 0) {
+        this.$message.warning('请先在表格中勾选要删除的用户')
         return
       }
-      
+
+      console.log('准备批量删除用户ID:', this.selectedRows.map(user => user.id))
+
       try {
+        // 确认对话框
         await this.$confirm(`确定要删除选中的 ${this.selectedRows.length} 个用户吗？`, '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
           type: 'warning'
         })
-        
-        const ids = this.selectedRows.map(row => row.id)
-        await request.delete(`/user/${ids.join(',')}`)
-        this.$message.success('批量删除成功')
+
+        console.log('用户确认批量删除，开始调用API')
+
+        // 提取选中用户的ID并转换为逗号分隔的字符串
+        const ids = this.selectedRows.map(user => user.id).join(',')
+        console.log('转换后的ID字符串:', ids)
+
+        // 调用删除API
+        const response = await request.delete(`/user/${ids}`)
+        console.log('批量删除API调用成功:', response)
+
+        this.$message.success(`成功删除 ${this.selectedRows.length} 个用户`)
+
+        // 重新加载数据
+        await this.loadData()
+
+        // 清空选中状态
         this.selectedRows = []
-        this.loadData()
+
       } catch (error) {
+        console.log('批量删除过程错误:', error)
         if (error !== 'cancel') {
-          this.$message.error('批量删除失败：' + error.message)
+          this.$message.error('批量删除失败: ' + (error.message || '未知错误'))
         }
       }
     },
