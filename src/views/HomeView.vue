@@ -1,13 +1,9 @@
 <template>
-  <div style="min-height: 100vh; height: 100%">
-    <el-container style="height: 100%; border: 1px solid #eee">
+  <div class="full-screen-container">
+    <el-container class="full-height-container" style="height: 100%; border: 1px solid #eee">
       <el-aside
         :width="sideWidth + 'px'"
-        style="
-          background-color: rgb(238, 241, 246);
-          min-height: 100%;
-          overflow: hidden;
-        "
+        class="sidebar-container"
       >
         <el-menu
           :default-openeds="['1', '3']"
@@ -18,6 +14,8 @@
           :collapse-transition="false"
           :collapse="isCollapse"
           class="el-menu-vertical-demo"
+          :default-active="activeMenu"
+          @select="handleMenuSelect"
         >
           <div style="height: 60px; line-height: 60px; text-align: center">
             <img
@@ -27,71 +25,38 @@
             />
             <b style="color: #fff" v-show="logoTextshow">后台管理系统</b>
           </div>
-          <el-submenu index="1">
-            <template slot="title"
-              ><i class="el-icon-message"></i>
-              <span slot="title">导航一</span></template
-            >
-            <el-menu-item-group>
-              <template slot="title">分组一</template>
-              <el-menu-item index="1-1">选项1</el-menu-item>
-              <el-menu-item index="1-2">选项2</el-menu-item>
-            </el-menu-item-group>
-            <el-menu-item-group title="分组2">
-              <el-menu-item index="1-3">选项3</el-menu-item>
-            </el-menu-item-group>
-            <el-submenu index="1-4">
-              <template slot="title">选项4</template>
-              <el-menu-item index="1-4-1">选项4-1</el-menu-item>
-            </el-submenu>
+          <!-- 首页 -->
+          <el-menu-item index="home">
+            <i class="el-icon-house"></i>
+            <span slot="title">首页</span>
+          </el-menu-item>
+
+          <!-- 管理 -->
+          <el-submenu index="management">
+            <template slot="title">
+              <i class="el-icon-menu"></i>
+              <span slot="title">管理</span>
+            </template>
+            <el-menu-item index="employee-management">员工管理</el-menu-item>
+            <el-menu-item index="department-management">部门管理</el-menu-item>
+            <el-menu-item index="role-management">角色管理</el-menu-item>
           </el-submenu>
-          <el-submenu index="2">
-            <template slot="title"
-              ><i class="el-icon-menu"></i>
-              <span slot="title">导航二</span></template
-            >
-            <el-menu-item-group>
-              <template slot="title">分组一</template>
-              <el-menu-item index="2-1">选项1</el-menu-item>
-              <el-menu-item index="2-2">选项2</el-menu-item>
-            </el-menu-item-group>
-            <el-menu-item-group title="分组2">
-              <el-menu-item index="2-3">选项3</el-menu-item>
-            </el-menu-item-group>
-            <el-submenu index="2-4">
-              <template slot="title">选项4</template>
-              <el-menu-item index="2-4-1">选项4-1</el-menu-item>
-            </el-submenu>
-          </el-submenu>
-          <el-submenu index="3">
-            <template slot="title"
-              ><i class="el-icon-setting"></i>
-              <span slot="title">导航三</span></template
-            >
-            <el-menu-item-group>
-              <template slot="title">分组一</template>
-              <el-menu-item index="3-1">选项1</el-menu-item>
-              <el-menu-item index="3-2">选项2</el-menu-item>
-            </el-menu-item-group>
-            <el-menu-item-group title="分组2">
-              <el-menu-item index="3-3">选项3</el-menu-item>
-            </el-menu-item-group>
-            <el-submenu index="3-4">
-              <template slot="title">选项4</template>
-              <el-menu-item index="3-4-1">选项4-1</el-menu-item>
-            </el-submenu>
+
+          <!-- 设置 -->
+          <el-submenu index="settings">
+            <template slot="title">
+              <i class="el-icon-setting"></i>
+              <span slot="title">设置</span>
+            </template>
+            <el-menu-item index="system-settings">系统设置</el-menu-item>
+            <el-menu-item index="user-settings">个人设置</el-menu-item>
           </el-submenu>
         </el-menu>
       </el-aside>
 
-      <el-container>
+      <el-container class="main-container">
         <el-header
-          style="
-            font-size: 12px;
-            border-bottom: 1px solid #ccc;
-            line-height: 60px;
-            display: flex;
-          "
+            class="header-container"
         >
           <div style="flex: 1; font-size: 18px">
             <span
@@ -112,7 +77,15 @@
           </div>
         </el-header>
 
-        <el-main>
+        <el-main class="content-container">
+          <!-- 首页内容 -->
+          <div v-if="activeMenu === 'home'">
+            <h2>欢迎使用后台管理系统</h2>
+            <el-card>
+              <div>这里是首页内容，可以展示系统概览、统计信息等</div>
+            </el-card>
+          </div>
+          <div v-if="activeMenu === 'employee-management'">
           <div style="padding: 10px 0">
             <el-input
                 v-model="searchParams.name"
@@ -205,6 +178,38 @@
               :total="pagination.total"
             >
             </el-pagination>
+          </div>
+          </div>
+          <!-- 部门管理内容 -->
+          <div v-if="activeMenu === 'department-management'">
+            <h2>部门管理</h2>
+            <el-card>
+              <div>部门管理功能开发中...</div>
+            </el-card>
+          </div>
+
+          <!-- 角色管理内容 -->
+          <div v-if="activeMenu === 'role-management'">
+            <h2>角色管理</h2>
+            <el-card>
+              <div>角色管理功能开发中...</div>
+            </el-card>
+          </div>
+
+          <!-- 系统设置内容 -->
+          <div v-if="activeMenu === 'system-settings'">
+            <h2>系统设置</h2>
+            <el-card>
+              <div>系统设置功能开发中...</div>
+            </el-card>
+          </div>
+
+          <!-- 个人设置内容 -->
+          <div v-if="activeMenu === 'user-settings'">
+            <h2>个人设置</h2>
+            <el-card>
+              <div>个人设置功能开发中...</div>
+            </el-card>
           </div>
         </el-main>
       </el-container>
@@ -302,6 +307,9 @@ export default {
       dialogType: 'add', // 添加对话框类型：add-新增，edit-编辑
       tempPreviewUrl: '', // 临时预览URL
       localPreviewUrl: '', // 本地预览URL
+      // 当前激活的菜单和页面标题
+      activeMenu: 'employee-management',
+      pageTitle: '员工管理',
       form: {
         id: null,
         name: '',
@@ -357,6 +365,26 @@ export default {
         this.collapseBtnClass = "el-icon-s-fold";
         this.sideWidth = 200;
         this.logoTextshow = true;
+      }
+    },
+    // 菜单选择处理
+    handleMenuSelect(index) {
+      this.activeMenu = index;
+
+      // 更新页面标题
+      const titleMap = {
+        'home': '首页',
+        'employee-management': '员工管理',
+        'department-management': '部门管理',
+        'role-management': '角色管理',
+        'system-settings': '系统设置',
+        'user-settings': '个人设置'
+      };
+      this.pageTitle = titleMap[index] || '未知页面';
+
+      // 如果是员工管理，加载数据
+      if (index === 'employee-management') {
+        this.loadData();
       }
     },
     // 新增用户
@@ -618,27 +646,5 @@ export default {
 };
 </script>
 <style>
-.avatar-uploader .el-upload {
-  border: 1px dashed #d9d9d9;
-  border-radius: 6px;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-}
-.avatar-uploader .el-upload:hover {
-  border-color: #409EFF;
-}
-.avatar-uploader-icon {
-  font-size: 28px;
-  color: #8c939d;
-  width: 178px;
-  height: 178px;
-  line-height: 178px;
-  text-align: center;
-}
-.avatar {
-  width: 178px;
-  height: 178px;
-  display: block;
-}
+
 </style>
