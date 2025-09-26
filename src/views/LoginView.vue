@@ -100,9 +100,10 @@ export default {
         if (response.code === 1) {  // 修改为 1，因为您的拦截器判断的是 code === 1
           this.showAlert('登录成功！', 'success');
           localStorage.setItem('jwtToken', response.data);
-
+          // 跳转到原本要访问的页面或首页
+          const redirectPath = this.$route.query.redirect || '/';
           setTimeout(() => {
-            this.$router.push('/');
+            this.$router.push(redirectPath);
           }, 1000);
         } else {
           this.showAlert(response.msg || '登录失败', 'error');

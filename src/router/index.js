@@ -37,13 +37,23 @@ router.beforeEach((to, from, next) => {
         const token = localStorage.getItem('jwtToken')
         if (!token) {
             // 未登录，重定向到登录页面
-            next('/login')
+            next({
+                path: '/login',
+                query: { redirect: to.fullPath } // 记录重定向路径
+            });
         } else {
             // 已登录，允许访问
             next()
         }
     } else {
-        // 不需要认证的路由，直接访问
+        // 如果访问的是登录页，且已登录，则跳转到首页
+        if (to.path === '/login') {
+            const token = localStorage.getItem('jwtToken');
+            if (token) {
+                next('/');
+                return;
+            }
+        }
         next()
     }
 })

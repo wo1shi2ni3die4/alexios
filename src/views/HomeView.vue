@@ -67,11 +67,11 @@
           </div>
           <div style="text-align: right; font-size: 12px; width: 200px">
             <el-dropdown style="width: 70px; cursor: pointer">
-              <span>王小虎</span
+              <span>{{ userName }}</span
               ><i class="el-icon-arrow-down" style="margin-left: 5px"></i>
               <el-dropdown-menu slot="dropdown">
                 <el-dropdown-item>个人信息</el-dropdown-item>
-                <el-dropdown-item>退出</el-dropdown-item>
+                <el-dropdown-item @click.native="handleLogout">退出</el-dropdown-item>
               </el-dropdown-menu>
             </el-dropdown>
           </div>
@@ -291,6 +291,7 @@
 
 <script>
 import request from '@/utils/request'
+import {parseJwt} from "@/utils/jwt";
 
 export default {
   data() {
@@ -310,6 +311,8 @@ export default {
       // 当前激活的菜单和页面标题
       activeMenu: 'employee-management',
       pageTitle: '员工管理',
+      // 添加用户名
+      userName: '用户',
       form: {
         id: null,
         name: '',
@@ -351,7 +354,8 @@ export default {
   },
   
   created() {
-    this.loadData()
+    this.loadData();
+    this.getUserInfoFromToken();
   },
   
   methods: {
@@ -640,6 +644,43 @@ export default {
         console.log('用户详情：', response.data)
       } catch (error) {
         this.$message.error('获取用户详情失败：' + error.message)
+      }
+    },
+    // 从token中获取用户信息
+    getUserInfoFromToken() {
+      const token = localStorage.getItem('jwtToken');
+      if (token) {
+        const decoded = parseJwt(token);
+        if (decoded) {
+          // 优先使用name，如果没有则使用username
+          this.userName = decoded.name || decoded.username || '用户';
+        }
+      }
+    },
+
+    // 退出登录
+    async handleLogout() {
+      try {
+        await this.$confirm('确定要退出登录吗？', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        });
+
+        // 清除token
+        localStorage.removeItem('jwtToken');
+
+        this.$message.success('退出成功');
+
+        // 跳转到登录页面
+        setTimeout(() => {
+          this.$router.push('/login');
+        }, 500);
+
+      } catch (error) {
+        if (error !== 'cancel') {
+          this.$message.error('退出失败');
+        }
       }
     }
   }
