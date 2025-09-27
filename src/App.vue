@@ -8,3 +8,8 @@
   min-height: 100vh;
 }
 </style>
+<script>
+export default {
+  name: 'App'
+}
+</script>
