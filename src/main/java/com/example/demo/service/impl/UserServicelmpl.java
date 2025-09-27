@@ -18,9 +18,9 @@ public class UserServicelmpl implements UserService {
     private UserMapper userMapper;
 
     @Override
-    public PageBean page(Integer page, Integer pageSize, String name, String email, String address) {
+    public PageBean page(Integer page, Integer pageSize, String name, Integer deptId, String address) {
         PageHelper.startPage(page,pageSize);
-        List<User>userList=userMapper.list(name,email,address);
+        List<User>userList=userMapper.list(name,deptId,address);
         Page<User> p=(Page<User>)userList;
         PageBean pageBean=new PageBean(p.getTotal(),p.getResult());
         return pageBean;

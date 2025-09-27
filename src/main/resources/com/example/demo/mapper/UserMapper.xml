@@ -9,8 +9,8 @@
             <if test="name != null and name != ''">
                 name like concat('%', #{name}, '%')
             </if>
-            <if test="email != null and email != ''">
-                and email like concat('%', #{email}, '%')
+            <if test="deptId != null">
+                and dept_id = #{deptId}
             </if>
             <if test="address != null and address != ''">
                 and address like concat('%', #{address}, '%')
@@ -29,7 +29,7 @@
         <set>
             <if test="username!=null">username=#{username},</if>
             <if test="name!=null">name=#{name},</if>
-            <if test="nickname!=null">nickname=#{nickname},</if>
+            <if test="deptId!=null">dept_id=#{deptId},</if>
             <if test="image!=null">image=#{image},</if>
             <if test="email!=null">email= #{email},</if>
             <if test="address!=null">address=#{address},</if>

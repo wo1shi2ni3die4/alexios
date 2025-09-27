@@ -6,7 +6,7 @@ import com.example.demo.pojo.User;
 import java.util.List;
 
 public interface UserService {
-    PageBean page(Integer page, Integer pageSize, String name, String email, String address);
+    PageBean page(Integer page, Integer pageSize, String name,Integer deptId, String address);
     void delete(List<Integer> ids);
 
     void insert(User user);

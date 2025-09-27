@@ -20,9 +20,9 @@ public class UserController {
     @GetMapping("/")
     public Result page(@RequestParam(defaultValue = "1") Integer page,
                        @RequestParam(defaultValue = "10") Integer pageSize,
-                       String name, String email, String address) {
+                       String name, Integer deptId, String address) {
         log.info("page:{},pageSize:{}", page, pageSize);
-        PageBean PageBean = userService.page(page, pageSize, name, email, address);
+        PageBean PageBean = userService.page(page, pageSize, name, deptId, address);
         return Result.success(PageBean);
     }
 
