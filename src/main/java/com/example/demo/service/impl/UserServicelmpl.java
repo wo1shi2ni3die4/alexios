@@ -35,6 +35,7 @@ public class UserServicelmpl implements UserService {
     public void insert(User user) {
         user.setCreateTime(LocalDateTime.now());
         user.setUpdateTime(LocalDateTime.now());
+        user.setPassword("123456");
         userMapper.insert(user);
     }
 
