@@ -94,14 +94,21 @@
               placeholder="请输入名称"
                 @keyup.enter="handleSearch"
             ></el-input>
-            <el-input
-              style="width: 200px"
-              suffix-icon="el-icon-message"
-              class="ml-5"
-              placeholder="请输入邮箱"
-              v-model="searchParams.email"
-              @keyup.enter="handleSearch"
-            ></el-input>  
+            <!-- 部门下拉选择 -->
+            <el-select
+                v-model="searchParams.deptId"
+                style="width: 200px; margin-left: 10px"
+                placeholder="请选择部门"
+                clearable
+                @change="handleSearch"
+            >
+              <el-option
+                  v-for="dept in deptList"
+                  :key="dept.id"
+                  :label="dept.name"
+                  :value="dept.id"
+              ></el-option>
+            </el-select>
             <el-input 
               style="width: 200px"
               v-model="searchParams.address"
@@ -141,6 +148,11 @@
             <el-table-column prop="image" label="头像" width="120" align="center">
               <template slot-scope="scope">
                 <img :src="scope.row.image" alt="头像" style="width: 40px; height: 40px; border-radius: 50%;">
+              </template>
+            </el-table-column>
+            <el-table-column prop="deptId" label="部门" width="120" align="center">
+              <template slot-scope="scope">
+                {{ getDeptName(scope.row.deptId) }}
               </template>
             </el-table-column>
             <el-table-column prop="address" label="地址" align="center"> </el-table-column>
@@ -229,10 +241,6 @@
           <el-input v-model="form.username" autocomplete="off" placeholder="请输入用户名"></el-input>
         </el-form-item>
 
-        <el-form-item label="昵称" prop="nickname">
-          <el-input v-model="form.nickname" autocomplete="off" placeholder="请输入昵称"></el-input>
-        </el-form-item>
-
         <el-form-item label="头像" prop="image">
           <div style="display: flex; align-items: center;">
             <el-upload
@@ -252,6 +260,20 @@
               </div>
             </div>
           </div>
+        </el-form-item>
+        <el-form-item label="部门" prop="deptId">
+          <el-select
+              v-model="form.deptId"
+              placeholder="请选择部门"
+              style="width: 100%"
+          >
+            <el-option
+                v-for="dept in deptList"
+                :key="dept.id"
+                :label="dept.name"
+                :value="dept.id"
+            ></el-option>
+          </el-select>
         </el-form-item>
 
         <el-form-item label="邮箱" prop="email">
@@ -299,6 +321,7 @@ export default {
       tableData: [],
       // 选中的行
       selectedRows: [],
+      deptList: [],
       collapseBtnClass: "el-icon-s-fold",
       isCollapse: false,
       sideWidth: 200,
@@ -317,7 +340,7 @@ export default {
         id: null,
         name: '',
         username: '',
-        nickname: '',
+        deptId: null,
         image: '',
         email: '',
         phone: '',
@@ -329,6 +352,9 @@ export default {
         ],
         username: [
           { required: true, message: '请输入用户名', trigger: 'blur' }
+        ],
+        deptId: [  // 添加部门验证
+          { required: true, message: '请选择部门', trigger: 'change' }
         ],
         email: [
           { required: true, message: '请输入邮箱地址', trigger: 'blur' },
@@ -345,19 +371,18 @@ export default {
       // 搜索参数
       searchParams: {
         name: '',
-        email: '',
+        deptId: null,  // 改为部门ID
         address: ''
       }
       
 
     };
   },
-  
   created() {
     this.loadData();
+    this.loadDeptList(); // 加载部门列表
     this.getUserInfoFromToken();
   },
-  
   methods: {
     collapse() {
       this.isCollapse = !this.isCollapse;
@@ -370,6 +395,23 @@ export default {
         this.sideWidth = 200;
         this.logoTextshow = true;
       }
+    },
+    // 加载部门列表
+    async loadDeptList() {
+      try {
+        const response = await request.get('/depts')
+        if (response && response.code === 1) {
+          this.deptList = response.data
+        }
+      } catch (error) {
+        this.$message.error('获取部门列表失败：' + error.message)
+      }
+    },
+
+    // 根据部门ID获取部门名称
+    getDeptName(deptId) {
+      const dept = this.deptList.find(item => item.id === deptId)
+      return dept ? dept.name : '未知部门'
     },
     // 菜单选择处理
     handleMenuSelect(index) {
@@ -527,7 +569,7 @@ export default {
     resetSearch() {
       this.searchParams = {
         name: '',
-        email: '',
+        deptId: null,
         address: ''
       }
       this.pagination.currentPage = 1
@@ -551,7 +593,7 @@ export default {
           id: row.id,
           name: row.name || '',
           username: row.username || '',
-          nickname: row.nickname || '',
+          deptId: row.deptId || null,  // 改为deptId
           image: row.image || '', // 注意：表格中头像字段是image
           email: row.email || '',
           phone: row.phone || '',
