@@ -50,6 +50,7 @@
               :data="tableData"
               border
               stripe
+              height="100%"
               :header-cell-class-name="headerclass"
               @selection-change="handleSelectionChange"
           >
